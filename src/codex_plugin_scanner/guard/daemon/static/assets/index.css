@@ -688,8 +688,16 @@
     z-index: 200;
   }
 
+  .col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
   .col-span-full {
     grid-column: 1 / -1;
+  }
+
+  .col-start-2 {
+    grid-column-start: 2;
   }
 
   .container {
@@ -876,6 +884,10 @@
 
   .-ml-2 {
     margin-left: calc(var(--spacing) * -2);
+  }
+
+  .-ml-3 {
+    margin-left: calc(var(--spacing) * -3);
   }
 
   .ml-1 {
@@ -1762,6 +1774,14 @@
     grid-template-columns: 1fr auto 1fr;
   }
 
+  .grid-cols-\[auto_1fr\] {
+    grid-template-columns: auto 1fr;
+  }
+
+  .grid-cols-\[auto_minmax\(0\,1fr\)_auto\] {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
   .grid-cols-\[minmax\(0\,1fr\)\] {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2025,6 +2045,14 @@
 
   .self-stretch {
     align-self: stretch;
+  }
+
+  .justify-self-end {
+    justify-self: flex-end;
+  }
+
+  .justify-self-start {
+    justify-self: flex-start;
   }
 
   .truncate {
@@ -3779,14 +3807,8 @@
     }
   }
 
-  .bg-surface-1, .bg-surface-1\/60 {
+  .bg-surface-1 {
     background-color: var(--surface-1);
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-surface-1\/60 {
-      background-color: color-mix(in oklab, var(--surface-1) 60%, transparent);
-    }
   }
 
   .bg-surface-2 {
@@ -4178,8 +4200,16 @@
     padding: calc(var(--spacing) * 2);
   }
 
+  .p-2\.5 {
+    padding: calc(var(--spacing) * 2.5);
+  }
+
   .p-3 {
     padding: calc(var(--spacing) * 3);
+  }
+
+  .p-3\.5 {
+    padding: calc(var(--spacing) * 3.5);
   }
 
   .p-4 {
@@ -4420,6 +4450,10 @@
 
   .pl-9 {
     padding-left: calc(var(--spacing) * 9);
+  }
+
+  .pl-14 {
+    padding-left: calc(var(--spacing) * 14);
   }
 
   .text-center {
@@ -6416,8 +6450,24 @@
     outline-style: none;
   }
 
+  .focus-visible\:ring-inset:focus-visible {
+    --tw-ring-inset: inset;
+  }
+
   .active\:scale-\[0\.98\]:active {
     scale: .98;
+  }
+
+  @media (hover: hover) {
+    .enabled\:hover\:bg-surface-1\/70:enabled:hover {
+      background-color: var(--surface-1);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .enabled\:hover\:bg-surface-1\/70:enabled:hover {
+        background-color: color-mix(in oklab, var(--surface-1) 70%, transparent);
+      }
+    }
   }
 
   .disabled\:pointer-events-none:disabled {
@@ -6583,8 +6633,16 @@
       z-index: 30;
     }
 
+    .sm\:col-span-1 {
+      grid-column: span 1 / span 1;
+    }
+
     .sm\:col-span-2 {
       grid-column: span 2 / span 2;
+    }
+
+    .sm\:col-start-auto {
+      grid-column-start: auto;
     }
 
     .sm\:-mx-6 {
@@ -6715,10 +6773,6 @@
       grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .sm\:grid-cols-\[minmax\(0\,1fr\)_auto_minmax\(0\,1\.15fr\)_auto_minmax\(0\,1fr\)\] {
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr) auto minmax(0, 1fr);
-    }
-
     .sm\:flex-row {
       flex-direction: row;
     }
@@ -6785,6 +6839,10 @@
 
     .sm\:self-end {
       align-self: flex-end;
+    }
+
+    .sm\:justify-self-end {
+      justify-self: flex-end;
     }
 
     .sm\:truncate {
@@ -6871,6 +6929,10 @@
 
     .sm\:pl-6 {
       padding-left: calc(var(--spacing) * 6);
+    }
+
+    .sm\:pl-14 {
+      padding-left: calc(var(--spacing) * 14);
     }
 
     .sm\:text-center {
@@ -7052,12 +7114,28 @@
       top: calc(var(--spacing) * 4);
     }
 
+    .lg\:order-first {
+      order: -9999;
+    }
+
+    .lg\:order-last {
+      order: 9999;
+    }
+
     .lg\:col-span-1 {
       grid-column: span 1 / span 1;
     }
 
     .lg\:col-span-2 {
       grid-column: span 2 / span 2;
+    }
+
+    .lg\:mt-5 {
+      margin-top: calc(var(--spacing) * 5);
+    }
+
+    .lg\:mt-auto {
+      margin-top: auto;
     }
 
     .lg\:block {
@@ -7082,6 +7160,10 @@
 
     .lg\:w-60 {
       width: calc(var(--spacing) * 60);
+    }
+
+    .lg\:w-full {
+      width: 100%;
     }
 
     .lg\:max-w-\[520px\] {
@@ -7120,6 +7202,10 @@
       grid-template-columns: 340px minmax(0, 1fr);
     }
 
+    .lg\:grid-cols-\[auto_minmax\(0\,1fr\)_auto\] {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
     .lg\:grid-cols-\[minmax\(0\,1\.3fr\)_minmax\(0\,0\.9fr\)\] {
       grid-template-columns: minmax(0, 1.3fr) minmax(0, .9fr);
     }
@@ -7152,6 +7238,10 @@
       grid-template-columns: minmax(0, 1fr) 280px;
     }
 
+    .lg\:grid-cols-\[minmax\(0\,1fr\)_300px\] {
+      grid-template-columns: minmax(0, 1fr) 300px;
+    }
+
     .lg\:grid-cols-\[minmax\(0\,1fr\)_380px\] {
       grid-template-columns: minmax(0, 1fr) 380px;
     }
@@ -7176,6 +7266,10 @@
       grid-template-columns: minmax(0, 14rem) minmax(0, 12rem) minmax(0, 1fr);
     }
 
+    .lg\:flex-col {
+      flex-direction: column;
+    }
+
     .lg\:flex-row {
       flex-direction: row;
     }
@@ -7198,6 +7292,10 @@
 
     .lg\:gap-4 {
       gap: calc(var(--spacing) * 4);
+    }
+
+    .lg\:gap-x-3 {
+      column-gap: calc(var(--spacing) * 3);
     }
 
     :where(.lg\:divide-x > :not(:last-child)) {
@@ -7235,6 +7333,10 @@
       }
     }
 
+    .lg\:p-3 {
+      padding: calc(var(--spacing) * 3);
+    }
+
     .lg\:p-7 {
       padding: calc(var(--spacing) * 7);
     }
@@ -7245,6 +7347,19 @@
 
     .lg\:px-8 {
       padding-inline: calc(var(--spacing) * 8);
+    }
+
+    .lg\:pt-3 {
+      padding-top: calc(var(--spacing) * 3);
+    }
+
+    .lg\:text-center {
+      text-align: center;
+    }
+
+    .lg\:text-2xl {
+      font-size: var(--text-2xl);
+      line-height: var(--tw-leading, var(--text-2xl--line-height));
     }
 
     .lg\:text-6xl {
@@ -10342,194 +10457,217 @@ input:focus-visible, button:focus-visible, a:focus-visible {
   box-shadow: 0 0 0 3px rgba(85, 153, 254, 0.22);
 }
 
-/* ---------------------------------------------------------------- Home: how Guard works + sample */
-.guard-how-step {
-  transition:
-    background-color 240ms var(--ease-out-quart),
-    box-shadow 240ms var(--ease-out-quart);
-}
-
-.guard-how-step--lit {
-  background: rgba(85, 153, 254, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(85, 153, 254, 0.22);
-}
-
-.guard-how-step--lit .guard-how-step-icon {
-  background: var(--brand-blue);
-  color: #ffffff;
-}
-
-.guard-how-step--done .guard-how-step-icon {
-  background: var(--brand-green-bg);
-  color: var(--brand-green-text);
-}
-
-.guard-sample-card {
-  min-width: 0;
-  transition:
-    box-shadow 240ms var(--ease-out-quart),
-    border-color 240ms var(--ease-out-quart);
-}
-
-.guard-sample-card--active {
-  border-color: rgba(85, 153, 254, 0.45);
-  box-shadow: 0 6px 20px rgba(85, 153, 254, 0.12);
-}
-
-.guard-sample-chip {
-  transition:
-    opacity 260ms var(--ease-out-quart),
-    transform 260ms var(--ease-out-quart);
-}
-
-.guard-sample-chip--hidden {
-  opacity: 0;
-  transform: translateY(6px);
-}
-
-.guard-sample-link {
+/* ---------------------------------------------------------------- Home: "How Guard protects you" sample session */
+/* Outcome colours follow Evidence: allowed green, stopped amber, reviewed blue. */
+.guard-checkpoint {
+  --checkpoint-color: var(--brand-dark);
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.guard-sample-link::before {
-  content: "";
-  position: absolute;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
-  background: var(--surface-3);
+  background: radial-gradient(circle, color-mix(in srgb, var(--checkpoint-color) 12%, transparent) 0%, transparent 70%);
+  transition: background 320ms var(--ease-out-quart);
 }
 
-.guard-sample-dot {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--brand-blue);
-  box-shadow: 0 0 0 4px rgba(85, 153, 254, 0.18);
-  opacity: 0;
-}
-
-@media (min-width: 640px) {
-  .guard-sample-link {
-    width: 44px;
-    min-height: 100%;
-  }
-
-  .guard-sample-link::before {
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 2px;
-    margin-top: -1px;
-  }
-
-  .guard-sample-dot {
-    left: -5px;
-    top: 50%;
-    margin-top: -5px;
-  }
-
-  .guard-sample-link--sending .guard-sample-dot {
-    animation: guard-sample-dot-x 620ms var(--ease-out-quart) forwards;
-  }
-
-  @keyframes guard-sample-dot-x {
-    0% { opacity: 0; transform: translateX(0); }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(44px); }
+@media (min-width: 1024px) {
+  .guard-checkpoint {
+    width: 112px;
+    height: 112px;
+    margin-bottom: 4px;
   }
 }
 
-@media (max-width: 639px) {
-  .guard-sample-link {
-    height: 34px;
-  }
+.guard-checkpoint[data-state="checking"] { --checkpoint-color: var(--brand-blue); }
+.guard-checkpoint[data-state="ran"] { --checkpoint-color: var(--evidence-allowed); }
+.guard-checkpoint[data-state="stopped"] { --checkpoint-color: var(--evidence-stopped); }
+.guard-checkpoint[data-state="asking"],
+.guard-checkpoint[data-state="reviewed"] { --checkpoint-color: var(--evidence-reviewed); }
 
-  .guard-sample-link::before {
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    margin-left: -1px;
-  }
-
-  .guard-sample-dot {
-    top: -5px;
-    left: 50%;
-    margin-left: -5px;
-  }
-
-  .guard-sample-link--sending .guard-sample-dot {
-    animation: guard-sample-dot-y 620ms var(--ease-out-quart) forwards;
-  }
-
-  @keyframes guard-sample-dot-y {
-    0% { opacity: 0; transform: translateY(0); }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(34px); }
-  }
+.guard-checkpoint-mark {
+  display: block;
+  width: 72%;
+  height: 72%;
 }
 
-.guard-sample-mark svg {
+.guard-checkpoint-mark svg {
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
-.guard-sample-mark circle,
-.guard-sample-mark line {
+.guard-checkpoint-mark circle,
+.guard-checkpoint-mark line {
   transition:
-    fill 300ms,
-    stroke 300ms;
+    fill 320ms var(--ease-out-quart),
+    stroke 320ms var(--ease-out-quart);
 }
 
-.guard-sample-mark[data-state="checking"] .bm-node-core {
-  animation: guard-sample-core-pulse 700ms ease-in-out infinite;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-
-.guard-sample-mark[data-state="checking"] .bm-bar-spoke {
+/* Checking: the outer nodes light up in turn, like Guard reading the action */
+.guard-checkpoint[data-state="checking"] .bm-bar-spoke,
+.guard-checkpoint[data-state="checking"] .bm-bar-radial {
   stroke: var(--brand-blue);
 }
 
-.guard-sample-mark[data-state="paused"] .bm-node-core {
-  fill: var(--evidence-stopped);
+.guard-checkpoint[data-state="checking"] .bm-node-outer {
+  animation: guard-checkpoint-scan 720ms ease-in-out infinite;
 }
 
-.guard-sample-mark[data-state="paused"] .bm-bar-spoke {
+.guard-checkpoint[data-state="checking"] .bm-node-outer:nth-of-type(2) { animation-delay: 120ms; }
+.guard-checkpoint[data-state="checking"] .bm-node-outer:nth-of-type(3) { animation-delay: 240ms; }
+.guard-checkpoint[data-state="checking"] .bm-node-outer:nth-of-type(4) { animation-delay: 360ms; }
+.guard-checkpoint[data-state="checking"] .bm-node-outer:nth-of-type(5) { animation-delay: 480ms; }
+.guard-checkpoint[data-state="checking"] .bm-node-outer:nth-of-type(6) { animation-delay: 600ms; }
+
+.guard-checkpoint[data-state="ran"] circle { fill: var(--brand-green-text); }
+
+.guard-checkpoint[data-state="stopped"] circle,
+.guard-checkpoint[data-state="stopped"] .bm-bar-spoke,
+.guard-checkpoint[data-state="stopped"] .bm-bar-ring {
+  fill: var(--evidence-stopped);
   stroke: var(--evidence-stopped);
 }
 
-.guard-sample-mark[data-state="allowed"] .bm-node-core,
-.guard-sample-mark[data-state="allowed"] .bm-node-inner {
-  fill: var(--brand-green);
+.guard-checkpoint[data-state="asking"] circle,
+.guard-checkpoint[data-state="asking"] .bm-bar-spoke,
+.guard-checkpoint[data-state="reviewed"] circle {
+  fill: var(--brand-blue);
+  stroke: var(--brand-blue);
 }
 
-.guard-sample-mark[data-state="allowed"] .bm-bar-spoke,
-.guard-sample-mark[data-state="allowed"] .bm-bar-inner {
-  stroke: var(--brand-green);
+.guard-checkpoint[data-state="asking"] .guard-checkpoint-mark {
+  animation: guard-checkpoint-breathe 1.8s ease-in-out infinite;
 }
 
-.guard-sample-mark[data-state="blocked"] .bm-node-core {
-  fill: var(--brand-purple);
+/* One ring per decision, so each verdict lands visibly */
+.guard-checkpoint-ripple {
+  position: absolute;
+  inset: 8%;
+  border-radius: 999px;
+  border: 2px solid var(--checkpoint-color);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.guard-sample-mark[data-state="blocked"] .bm-bar-spoke {
-  stroke: var(--brand-purple);
+.guard-checkpoint:not([data-state="idle"]):not([data-state="checking"]) .guard-checkpoint-ripple {
+  animation: guard-checkpoint-ripple 700ms var(--ease-out-quart) both;
 }
 
-@keyframes guard-sample-core-pulse {
+.guard-checkpoint-title[data-state="ran"] { color: var(--brand-green-text); }
+.guard-checkpoint-title[data-state="stopped"] { color: #b45309; }
+.guard-checkpoint-title[data-state="asking"],
+.guard-checkpoint-title[data-state="reviewed"] { color: var(--brand-blue); }
+
+@media (min-width: 1024px) {
+  .guard-session-feed {
+    min-height: 456px;
+  }
+}
+
+.guard-session-row {
+  animation: guard-session-row-in 320ms var(--ease-out-quart) both;
+  transition: background-color 240ms var(--ease-out-quart);
+}
+
+.guard-session-row[data-tone="stopped"] {
+  background: rgba(255, 251, 235, 0.85);
+}
+
+.guard-session-row[data-tone="ask"] {
+  background: color-mix(in srgb, var(--brand-blue) 4%, white);
+}
+
+.guard-session-row[data-inspected] {
+  box-shadow: inset 3px 0 0 var(--brand-blue);
+  background: var(--surface-1);
+}
+
+.guard-session-row[data-tone="stopped"] .guard-session-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.guard-session-row[data-tone="ask"] .guard-session-icon {
+  background: color-mix(in srgb, var(--brand-blue) 14%, white);
+  color: var(--brand-blue);
+}
+
+.guard-session-detail {
+  animation: guard-session-row-in 280ms var(--ease-out-quart) both;
+}
+
+.guard-session-chip {
+  transition:
+    background-color 200ms,
+    color 200ms,
+    border-color 200ms;
+}
+
+.guard-session-chip[data-status="waiting"] {
+  animation: guard-session-waiting 1.6s ease-in-out infinite;
+}
+
+.guard-session-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--brand-blue) 25%, transparent);
+  border-top-color: var(--brand-blue);
+  animation: guard-session-spin 700ms linear infinite;
+}
+
+.guard-session-status[data-phase="waiting"] {
+  color: var(--brand-blue);
+  font-weight: 600;
+}
+
+.guard-session-count {
+  animation: guard-session-count-in 260ms var(--ease-out-quart) both;
+}
+
+@keyframes guard-checkpoint-scan {
+  0%, 100% { fill: var(--brand-dark); }
+  40% { fill: var(--brand-blue); }
+}
+
+@keyframes guard-checkpoint-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.18); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes guard-checkpoint-ripple {
+  0% { opacity: 0.7; transform: scale(0.75); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+@keyframes guard-session-row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes guard-session-count-in {
+  from { opacity: 0.35; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes guard-session-waiting {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-blue) 35%, transparent); }
+  50% { box-shadow: 0 0 0 4px transparent; }
+}
+
+@keyframes guard-session-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .guard-sample-mark[data-state="checking"] .bm-node-core,
-  .guard-sample-link--sending .guard-sample-dot {
+  .guard-checkpoint *,
+  .guard-session-row,
+  .guard-session-detail,
+  .guard-session-count,
+  .guard-session-chip,
+  .guard-session-spinner {
     animation: none !important;
   }
 }

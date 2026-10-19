@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { HiMiniCheckCircle, HiMiniLockClosed } from "react-icons/hi2";
+import { HiMiniArrowRight, HiMiniCheckCircle, HiMiniLockClosed } from "react-icons/hi2";
 
 import { ABOUT_LOCAL_SECTION_BODY, ABOUT_LOCAL_SECTION_TITLE } from "./about/about-content";
 import { ActionButton, SectionLabel, Tag } from "./approval-center-primitives";
@@ -33,7 +33,7 @@ export function resolveSetupApps(managedInstalls: GuardManagedInstall[], observe
 
 export function buildSetupAppsCopy(apps: HomeSetupApp[]): string {
   if (apps.length === 0) {
-    return "Guard hasn’t seen an AI app on this computer yet. Open one and run it once; Guard will notice it and show it here.";
+    return "Guard hasn’t seen an AI app on this computer yet. Protect lists the apps installed here and connects one in a few seconds.";
   }
   return "Guard found these on this computer. Connecting takes a few seconds and doesn’t change how the app works.";
 }
@@ -41,7 +41,9 @@ export function buildSetupAppsCopy(apps: HomeSetupApp[]): string {
 export function HomeSetupCard(props: {
   apps: HomeSetupApp[];
   onConnectHarness: (harness: string) => void;
+  onOpenProtect: () => void;
 }) {
+  const noApps = props.apps.length === 0;
   return (
     <section className="guard-fade-in rounded-2xl border border-brand-blue/15 bg-white shadow-sm" aria-label="Get set up">
       <div className="border-b border-slate-100 px-5 py-4">
@@ -72,6 +74,12 @@ export function HomeSetupCard(props: {
                   ))}
                 </div>
               ) : null}
+              <div className="mt-3">
+                <ActionButton variant={noApps ? "primary" : "quiet"} className={noApps ? undefined : "-ml-3"} onClick={props.onOpenProtect}>
+                  {noApps ? "Set up an app in Protect" : "See every app in Protect"}
+                  <HiMiniArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                </ActionButton>
+              </div>
               <p className="mt-3 text-xs text-slate-500">{SUPPORTED_APPS_FULL}</p>
             </div>
           </div>

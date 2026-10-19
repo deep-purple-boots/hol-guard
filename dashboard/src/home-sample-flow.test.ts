@@ -1,14 +1,17 @@
 import {
-  buildSampleCopy,
-  currentSample,
-  INITIAL_SAMPLE_STATE,
-  personalizeSamples,
-  SAMPLE_ACTIONS,
-  sampleReducer,
-  sampleStepForPhase,
-  type SampleState,
+  decisionOutcome,
+  INITIAL_SESSION_STATE,
+  rowStatus,
+  SAMPLE_SESSION,
+  sampleAppName,
+  sessionCounts,
+  sessionPhase,
+  sessionReducer,
+  sessionStatusLine,
+  type SessionEvent,
+  type SessionState,
 } from "./home-sample-flow";
-import { HOW_GUARD_WORKS_STEPS, resolveHowGuardWorksDefaultOpen } from "./home-how-guard-works";
+import { HOW_GUARD_WORKS_OUTCOMES, resolveHowGuardWorksDefaultOpen } from "./home-how-guard-works";
 import { buildSetupAppsCopy, resolveSetupApps } from "./home-setup-card";
 
 function assert(condition: boolean, message: string): void {
@@ -22,64 +25,83 @@ function containsJargon(text: string): boolean {
   return JARGON_WORDS.some((word) => text.toLowerCase().includes(word.toLowerCase()));
 }
 
-// --- the walkthrough runs: idle → requested → checking → paused → decided → (run again)
-let state: SampleState = INITIAL_SAMPLE_STATE;
-assert(sampleReducer(state, { type: "advance" }).phase === "idle", "advance does nothing while idle");
-assert(sampleReducer(state, { type: "decide", decision: "block" }).phase === "idle", "cannot decide before Guard pauses");
-state = sampleReducer(state, { type: "run" });
-assert(state.phase === "requested" && state.runs === 1, "run starts the walkthrough");
-assert(sampleReducer(state, { type: "run" }).phase === "requested", "run is ignored while a sample is in flight");
-state = sampleReducer(state, { type: "advance" });
-assert(state.phase === "checking", "first advance moves to checking");
-assert(sampleReducer(state, { type: "decide", decision: "once" }).phase === "checking", "cannot decide while checking");
-state = sampleReducer(state, { type: "advance" });
-assert(state.phase === "paused", "second advance pauses the action");
-assert(sampleReducer(state, { type: "advance" }).phase === "paused", "paused waits for the person");
-state = sampleReducer(state, { type: "decide", decision: "always" });
-assert(state.phase === "decided" && state.decision === "always", "decision is recorded");
-const next = sampleReducer(state, { type: "run" });
-assert(next.phase === "requested" && next.sampleIndex === 1 && next.decision === null, "running again moves to the next sample");
-assert(currentSample(next).id === SAMPLE_ACTIONS[1].id, "sample index selects the next sample");
-assert(currentSample({ ...next, sampleIndex: SAMPLE_ACTIONS.length }).id === SAMPLE_ACTIONS[0].id, "samples wrap around");
-assert(sampleReducer(state, { type: "reset" }).phase === "idle", "reset returns to idle");
-
-// --- steps light in order
-assert(sampleStepForPhase("idle") === 0 && sampleStepForPhase("requested") === 1 && sampleStepForPhase("checking") === 1, "watching step lights first");
-assert(sampleStepForPhase("paused") === 2 && sampleStepForPhase("decided") === 3, "pause then decide");
-
-// --- copy is honest and plain
-for (const sample of SAMPLE_ACTIONS) {
-  for (const phase of ["idle", "requested", "checking", "paused"] as const) {
-    const copy = buildSampleCopy(sample, { phase, sampleIndex: 0, decision: null, runs: 1 });
-    const text = [copy.appNote, copy.guardStatus, copy.guardDetail, copy.youTitle, copy.youBody, copy.guardTag?.label ?? ""].join(" ");
-    assert(!containsJargon(text), `sample copy avoids jargon in ${phase} — got "${text}"`);
-    assert(copy.receiptLine === null, `no receipt before a decision (${phase})`);
-  }
-  for (const decision of ["once", "always", "block"] as const) {
-    const copy = buildSampleCopy(sample, { phase: "decided", sampleIndex: 0, decision, runs: 1 });
-    assert(copy.receiptLine !== null && copy.receiptLine.includes(sample.appName), "receipt names the app");
-    assert(copy.receiptLine!.includes(decision === "block" ? "blocked" : "allowed"), "receipt states the decision");
-    assert(decision !== "once" || copy.receiptLine!.endsWith("(once)"), "one-time approvals are marked");
-    assert(copy.receiptNote !== null && copy.receiptNote.includes("In real use"), "the sample says it is a demonstration");
-    assert(!containsJargon(`${copy.youBody} ${copy.receiptNote}`), "decision copy avoids jargon");
-  }
+function run(state: SessionState, events: SessionEvent[]): SessionState {
+  return events.reduce((current, event) => sessionReducer(current, event), state);
 }
-const pausedCopy = buildSampleCopy(SAMPLE_ACTIONS[0], { phase: "paused", sampleIndex: 0, decision: null, runs: 1 });
-assert(pausedCopy.guardTag?.tone === "attention" && pausedCopy.youTitle === "Your call", "paused state asks the person");
 
-// --- the walkthrough uses the person's own apps when it can
-const personalized = personalizeSamples(["hermes", "claude-code"]);
-assert(personalized[0].appName === "Claude Code", "connected sample apps keep their own sample");
-assert(personalized[1].appName === "Hermes" && personalized[1].question.startsWith("Hermes "), "an unmatched connected app replaces a sample app");
-assert(personalized[2].appName === "Cursor", "remaining samples keep their defaults");
-assert(personalizeSamples([]) === SAMPLE_ACTIONS, "no connected apps keeps the defaults");
+function tickUntilSettled(state: SessionState): SessionState {
+  let current = state;
+  for (let guard = 0; guard < 100; guard += 1) {
+    const phase = sessionPhase(current);
+    if (phase === "waiting" || phase === "finished") return current;
+    current = sessionReducer(current, { type: "tick" });
+  }
+  throw new Error("session never settled");
+}
 
-// --- how-it-works defaults and copy
+const askIndex = SAMPLE_SESSION.findIndex((row) => row.verdict === "ask");
+const stopIndex = SAMPLE_SESSION.findIndex((row) => row.verdict === "stopped");
+
+// --- the script shows all three outcomes, with the harmful action before the question
+assert(SAMPLE_SESSION.filter((row) => row.verdict === "ask").length === 1, "the sample asks exactly once");
+assert(stopIndex >= 0 && stopIndex < askIndex, "something harmful is stopped before Guard asks");
+assert(SAMPLE_SESSION.filter((row) => row.verdict === "ran").length > SAMPLE_SESSION.length / 2, "most actions run without asking");
+assert(askIndex < SAMPLE_SESSION.length - 1, "work carries on after the question");
+
+// --- playback: each tick reveals a row being checked, the next tick resolves it
+assert(sessionPhase(INITIAL_SESSION_STATE) === "ready", "starts ready");
+const first = sessionReducer(INITIAL_SESSION_STATE, { type: "tick" });
+assert(first.shown === 1 && first.checking && rowStatus(first, 0) === "checking", "first tick shows a row being checked");
+assert(sessionCounts(first).checked === 0, "a row being checked is not counted yet");
+const firstDone = sessionReducer(first, { type: "tick" });
+assert(!firstDone.checking && rowStatus(firstDone, 0) === "ran", "second tick resolves the row");
+
+// --- the session pauses on the question and ignores ticks until the person answers
+const waiting = tickUntilSettled(INITIAL_SESSION_STATE);
+assert(sessionPhase(waiting) === "waiting" && waiting.shown === askIndex + 1, "pauses on the question");
+assert(sessionReducer(waiting, { type: "tick" }) === waiting, "ticks do nothing while waiting");
+assert(rowStatus(waiting, askIndex) === "waiting" && rowStatus(waiting, stopIndex) === "stopped", "row statuses follow the script");
+assert(sessionStatusLine(waiting).includes("waiting for you"), "status line says Guard is waiting");
+const waitingCounts = sessionCounts(waiting);
+assert(waitingCounts.stopped === 1 && waitingCounts.asked === 1 && waitingCounts.ran === askIndex - 1, "counts match what is on screen");
+
+// --- every review offers Allow once, Always allow and Block, and each one lets the session finish
+for (const decision of ["once", "always", "block"] as const) {
+  const decided = sessionReducer(waiting, { type: "decide", decision });
+  assert(rowStatus(decided, askIndex) === decision, `${decision} is shown on the row`);
+  const finished = tickUntilSettled(decided);
+  assert(sessionPhase(finished) === "finished" && finished.shown === SAMPLE_SESSION.length, `${decision} lets the session finish`);
+  assert(sessionStatusLine(finished).includes("asked once"), "the finished line says you were asked once");
+  assert(!containsJargon(decisionOutcome(decision)), `${decision} outcome avoids jargon`);
+}
+assert(decisionOutcome("always").includes("changes"), "Always allow explains Guard checks again if the package changes");
+assert(sessionReducer(INITIAL_SESSION_STATE, { type: "decide", decision: "once" }) === INITIAL_SESSION_STATE, "deciding before the question does nothing");
+
+// --- replay starts the session over and counts as a new run
+const finished = tickUntilSettled(sessionReducer(waiting, { type: "decide", decision: "once" }));
+const replayed = sessionReducer(finished, { type: "replay" });
+assert(replayed.shown === 0 && replayed.decision === null && sessionPhase(replayed) === "playing", "replay clears the session");
+assert(sessionReducer(replayed, { type: "tick" }).runs === finished.runs + 1, "replay counts as a new run so rows re-animate");
+
+// --- reduced motion jumps to the question, then to the end
+const skipped = sessionReducer(INITIAL_SESSION_STATE, { type: "skip" });
+assert(sessionPhase(skipped) === "waiting" && skipped.shown === askIndex + 1, "skip stops at the question");
+const skippedDone = run(skipped, [{ type: "decide", decision: "block" }, { type: "skip" }]);
+assert(sessionPhase(skippedDone) === "finished", "skip after answering shows the rest");
+
+// --- copy
+for (const row of SAMPLE_SESSION) {
+  assert(!containsJargon(`${row.label} ${row.reason ?? ""}`), `row copy avoids jargon: ${row.id}`);
+}
+for (const outcome of HOW_GUARD_WORKS_OUTCOMES) {
+  assert(!containsJargon(`${outcome.title} ${outcome.body}`), `outcome copy avoids jargon: ${outcome.key}`);
+}
+assert(sampleAppName([]) === "Claude Code", "defaults to a familiar app name");
+assert(sampleAppName(["codex"]) === "Codex", "names the sample after a connected app");
+
+// --- how-it-works defaults
+// --- how-it-works defaults
 assert(resolveHowGuardWorksDefaultOpen(0) && resolveHowGuardWorksDefaultOpen(19) && !resolveHowGuardWorksDefaultOpen(20), "walkthrough opens for new installs only");
-assert(HOW_GUARD_WORKS_STEPS.length === 3, "three steps");
-for (const step of HOW_GUARD_WORKS_STEPS) {
-  assert(!containsJargon(`${step.title} ${step.body}`), `step copy avoids jargon — got "${step.title}"`);
-}
 
 // --- first-run setup card lists what Guard actually knows about
 const setupApps = resolveSetupApps(
@@ -93,6 +115,6 @@ assert(setupApps.length === 2, `active installs and non-displayable names are sk
 assert(setupApps[0].name === "Claude Code" && setupApps[0].state === "found", "observed apps are marked found");
 assert(setupApps[1].name === "Cursor" && setupApps[1].state === "partial", "inactive managed installs are marked partial");
 assert(!containsJargon(buildSetupAppsCopy(setupApps)) && !containsJargon(buildSetupAppsCopy([])), "setup copy avoids jargon");
-assert(buildSetupAppsCopy([]).includes("run it once"), "empty state tells people how Guard will find their app");
+assert(buildSetupAppsCopy([]).includes("Protect"), "empty state points people to Protect to connect an app");
 
 console.log("home-sample-flow tests passed");

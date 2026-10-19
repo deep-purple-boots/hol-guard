@@ -384,6 +384,7 @@ export function HomeWorkspace(props: {
         <HomeSetupCard
           apps={resolveSetupApps(managedInstalls, observedHarnesses)}
           onConnectHarness={props.onConnectHarness ?? props.onOpenAppDetail}
+          onOpenProtect={props.onOpenFleet}
         />
       ) : null}
 
