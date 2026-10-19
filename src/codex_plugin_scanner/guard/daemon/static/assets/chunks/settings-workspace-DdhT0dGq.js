@@ -1,6 +1,6 @@
 import { r as reactExports, aF as fetchResolvedApprovalGate, j as jsxRuntimeExports, A as ActionButton, aG as ApprovalProofModal, T as Tag, ay as PROTECTION_POSTURE_COPY, aH as POSTURE_OUTCOME_COLUMNS, aI as getDefaultExportFromCjs, aJ as React, R as HiMiniShieldCheck, aK as HiMiniSquares2X2, v as HiMiniLockClosed, aL as HiMiniBellAlert, aM as HiMiniAdjustmentsHorizontal, aN as HiMiniCircleStack, aO as TabBar, H as HiMiniChevronRight, S as SectionLabel, a2 as useFocusTrap, aP as fetchCloudReviewSettings, a0 as HiMiniCloud, d as HiMiniArrowPath, _ as HiMiniXMark, aQ as ApprovalProofFieldInputs, aR as isApprovalProofSubmitDisabled, aS as buildApprovalProofCredentials, aT as changeCloudReviewSettings, aU as resolveProtectionLevelCopy, aq as fetchSettings, aV as fetchRuntimeSnapshot, aW as clearHarnessWatchOverrides, aX as withHarnessPosturePatch, I as updateSettings, aY as clearPolicy, aZ as clearReviewQueue, a_ as revokeApprovalGateCooldown, a$ as disableApprovalGateTotp, b0 as importSettings, b1 as resetSettings, b2 as enrollApprovalGateTotp, b3 as verifyApprovalGateTotp, b4 as clearEvidence, b5 as exportDiagnostics, b6 as repairApprovalCenter, b7 as exportSettings, b8 as setupDesktopNotifications, N as EmptyState, b9 as settingsWatchBannerModel, ba as WorkspacePageHeader, W as WatchProtectionBanner, p as HiMiniMagnifyingGlass, bb as commitDashboardLocation, bc as guardAwareHref, c as HiMiniChevronDown, s as HiMiniCheckCircle, a4 as HiMiniExclamationTriangle, bd as humanizeList, be as isProtectionPosture, bf as deriveProtectionPosture, bg as normalizeHarnessPostures, bh as approvalGateCooldownLabel } from "../guard-dashboard.js";
 import { p as planGuardHookRemoval, r as removeAllGuardHooks, a as GuardRepairRequestError, b as resolveSettingsSaveProofKind, c as requiresSettingsSaveProof, d as HarnessPostureSummaryCard, e as HarnessPostureManager, G as GuardRepairControl, S as SettingsSaveProofModal, f as resolveSettingsSaveProofModalCopy } from "./settings-save-proof-modal-DSJONzDi.js";
-import { f as filterSettingsBySearch, R as RISK_CONTROL_CONSEQUENCES } from "./app-catalog-D-lQIe_k.js";
+import { f as filterSettingsBySearch, R as RISK_CONTROL_CONSEQUENCES } from "./app-catalog-BU3dzTBu.js";
 import { u as useConfirmDialog } from "./confirm-dialog-DoiBaaXB.js";
 import { C as ConnectGuardCloudButton } from "./connect-guard-cloud-button-COC8NKLs.js";
 function describeAffectedHarness(item) {
@@ -2943,7 +2943,13 @@ const riskControls = [
   { key: "persistence", label: "Persistence", description: "Startup files, launch agents, scheduled jobs, and recurring hooks.", consequence: RISK_CONTROL_CONSEQUENCES["persistence"] },
   { key: "guard_bypass", label: "Guard bypass", description: "Attempts to disable Guard hooks, policies, or approval flow.", consequence: RISK_CONTROL_CONSEQUENCES["guard_bypass"] },
   { key: "cloud_advisory", label: "Cloud advisories", description: "Team and Cloud guidance for known risky patterns.", consequence: RISK_CONTROL_CONSEQUENCES["cloud_advisory"] },
-  { key: "encoded_exfiltration", label: "Encoded exfiltration", description: "Encoded payloads that hide secret extraction and network transfer.", consequence: RISK_CONTROL_CONSEQUENCES["encoded_exfiltration"] }
+  { key: "encoded_exfiltration", label: "Encoded exfiltration", description: "Encoded payloads that hide secret extraction and network transfer.", consequence: RISK_CONTROL_CONSEQUENCES["encoded_exfiltration"] },
+  { key: "package_unknown", label: "Unrecognized packages", description: "Packages Guard cannot identify or find reputation for.", consequence: RISK_CONTROL_CONSEQUENCES["package_unknown"] },
+  { key: "package_lockfile_drift", label: "Lockfile bumps", description: "Manifest dependencies the lockfile does not pin yet.", consequence: RISK_CONTROL_CONSEQUENCES["package_lockfile_drift"] },
+  { key: "package_direct_source", label: "Direct package sources", description: "Git, URL, archive, local-path and replaced sources instead of the registry.", consequence: RISK_CONTROL_CONSEQUENCES["package_direct_source"] },
+  { key: "package_custom_registry", label: "Custom registries", description: "Installs that use a non-default package index or registry.", consequence: RISK_CONTROL_CONSEQUENCES["package_custom_registry"] },
+  { key: "package_install", label: "Every package install", description: "Every package install or update, even with no risk signal.", consequence: RISK_CONTROL_CONSEQUENCES["package_install"] },
+  { key: "low_trust_artifact", label: "Low trust scores", description: "Skills, MCP servers, and plugins scoring below 80 in the HOL Registry.", consequence: RISK_CONTROL_CONSEQUENCES["low_trust_artifact"] }
 ];
 const riskProfileActions = {
   relaxed: {
@@ -2960,7 +2966,13 @@ const riskProfileActions = {
     persistence: "warn",
     guard_bypass: "warn",
     cloud_advisory: "allow",
-    encoded_exfiltration: "warn"
+    encoded_exfiltration: "warn",
+    package_unknown: "allow",
+    package_lockfile_drift: "allow",
+    package_direct_source: "allow",
+    package_custom_registry: "allow",
+    package_install: "allow",
+    low_trust_artifact: "warn"
   },
   balanced: {
     local_secret_read: "require-reapproval",
@@ -2976,7 +2988,13 @@ const riskProfileActions = {
     persistence: "require-reapproval",
     guard_bypass: "block",
     cloud_advisory: "warn",
-    encoded_exfiltration: "require-reapproval"
+    encoded_exfiltration: "require-reapproval",
+    package_unknown: "allow",
+    package_lockfile_drift: "allow",
+    package_direct_source: "allow",
+    package_custom_registry: "allow",
+    package_install: "allow",
+    low_trust_artifact: "require-reapproval"
   },
   strict: {
     local_secret_read: "require-reapproval",
@@ -2992,7 +3010,13 @@ const riskProfileActions = {
     persistence: "block",
     guard_bypass: "block",
     cloud_advisory: "require-reapproval",
-    encoded_exfiltration: "block"
+    encoded_exfiltration: "block",
+    package_unknown: "block",
+    package_lockfile_drift: "require-reapproval",
+    package_direct_source: "require-reapproval",
+    package_custom_registry: "allow",
+    package_install: "allow",
+    low_trust_artifact: "require-reapproval"
   },
   custom: {
     local_secret_read: "require-reapproval",
@@ -3008,7 +3032,13 @@ const riskProfileActions = {
     persistence: "require-reapproval",
     guard_bypass: "block",
     cloud_advisory: "warn",
-    encoded_exfiltration: "require-reapproval"
+    encoded_exfiltration: "require-reapproval",
+    package_unknown: "allow",
+    package_lockfile_drift: "allow",
+    package_direct_source: "allow",
+    package_custom_registry: "allow",
+    package_install: "allow",
+    low_trust_artifact: "require-reapproval"
   }
 };
 function normalizeSettingsPayload(payload) {
