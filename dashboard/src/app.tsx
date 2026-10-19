@@ -1011,6 +1011,8 @@ export function App() {
             onConfirmClear={handleConfirmClear}
             onCancelClear={handleCancelClear}
             onOpenHelp={handleOpenHelp}
+            onOpenRequest={handleOpenRequest}
+            onConnectHarness={handleConnectHarness}
           />
         </Suspense>
       }
