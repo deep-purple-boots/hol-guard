@@ -18,12 +18,15 @@ import {
   Badge,
   EmptyState,
   SectionLabel,
-  GuardHero,
 } from "./approval-center-primitives";
 import { harnessDisplayName, formatRelativeTime, formatNumber, isDisplayableHarness } from "./approval-center-utils";
 import { useFocusTrap } from "./use-focus-trap";
 import { DeviceProofCard, resolveCloudIntelCopy } from "./runtime-overview";
 import { HomeProtectionModule } from "./home-protection-module";
+import { HomeHero, buildHeroFacts, buildHeroLiveLabel, buildHeroQueuePreview } from "./home-hero";
+import { HomeHowGuardWorks } from "./home-how-guard-works";
+import { HomeSetupCard, WhatStaysLocalCard, resolveSetupApps } from "./home-setup-card";
+import { useReducedMotion } from "./use-reduced-motion";
 import { approvalProofRequiresPassword } from "./approval-proof-inline";
 import { EvidenceInsightsHomePreview } from "./evidence/evidence-insights-home-preview";
 import { EvidenceInsightsShareModal } from "./evidence/evidence-insights-share-modal";
@@ -141,6 +144,8 @@ export function HomeWorkspace(props: {
   onConfirmClear: (credentials?: { approval_password?: string; approval_totp_code?: string }) => Promise<void>;
   onCancelClear: () => void;
   onOpenHelp?: () => void;
+  onOpenRequest?: (requestId: string) => void;
+  onConnectHarness?: (harness: string) => void;
 }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [clearPassword, setClearPassword] = useState("");
@@ -250,6 +255,34 @@ export function HomeWorkspace(props: {
     [snapshot, queuedCount]
   );
 
+  const queuedItems = props.requests.kind === "ready" ? props.requests.items : [];
+  const heroQueue = useMemo(() => buildHeroQueuePreview(queuedItems), [queuedItems]);
+  const latestReceipts = snapshot?.latest_receipts ?? [];
+  const heroFacts = useMemo(
+    () =>
+      buildHeroFacts({
+        status: state.heroStatus,
+        watchedAppsCount,
+        queuedCount,
+        latestReceipts,
+        analytics: analyticsState.kind === "ready" ? analyticsState.data : null,
+        oldestQueuedAt: queuedItems.length > 0 ? queuedItems[queuedItems.length - 1].created_at : null,
+      }),
+    [state.heroStatus, watchedAppsCount, queuedCount, latestReceipts, analyticsState, queuedItems]
+  );
+  const heroLiveLabel = buildHeroLiveLabel(state.heroStatus, watchedAppsCount, queuedCount);
+  const setupApps = useMemo(() => resolveSetupApps(managedInstalls, observedHarnesses), [managedInstalls, observedHarnesses]);
+  const connectHarness = props.onConnectHarness ?? props.onOpenAppDetail;
+  const activeHarnesses = useMemo(() => activeInstalls.map((item: GuardManagedInstall) => item.harness), [activeInstalls]);
+  const reducedMotion = useReducedMotion();
+  const [howItWorksOpenSignal, setHowItWorksOpenSignal] = useState(0);
+  const showHowItWorks = useCallback(() => {
+    setHowItWorksOpenSignal((value) => value + 1);
+    window.setTimeout(() => {
+      document.getElementById("guard-how-it-works")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    }, 0);
+  }, [reducedMotion]);
+
   const ctaAction =
     state.ctaTarget === "inbox"
       ? props.onOpenInbox
@@ -301,15 +334,32 @@ export function HomeWorkspace(props: {
         </div>
       )}
 
-      <GuardHero
+      <HomeHero
         status={state.heroStatus}
         headline={state.headline}
         subheadline={state.subheadline}
+        facts={heroFacts}
+        liveLabel={heroLiveLabel}
+        queue={heroQueue}
         cta={
           <ActionButton onClick={ctaAction} data-primary="true">
             {state.ctaLabel}
           </ActionButton>
         }
+        secondaryCta={
+          <ActionButton variant="outline" onClick={showHowItWorks}>
+            {state.heroStatus === "setup_gap" ? "See how it works" : "How Guard works"}
+          </ActionButton>
+        }
+        onOpenRequest={props.onOpenRequest}
+      />
+
+      {state.heroStatus === "setup_gap" ? <HomeSetupCard apps={setupApps} onConnectHarness={connectHarness} /> : null}
+
+      <HomeHowGuardWorks
+        receiptCount={snapshot.receipt_count ?? 0}
+        connectedHarnesses={activeHarnesses}
+        openSignal={howItWorksOpenSignal}
       />
 
       <EvidenceInsightsHomePreview
@@ -337,12 +387,14 @@ export function HomeWorkspace(props: {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)]">
         <section className="space-y-6">
-          <AppsAtAGlance
-            managedInstalls={managedInstalls}
-            observedHarnesses={observedHarnesses}
-            queuedItems={props.requests.kind === "ready" ? props.requests.items : []}
-            onOpenAppDetail={props.onOpenAppDetail}
-          />
+          {state.heroStatus !== "setup_gap" && (
+            <AppsAtAGlance
+              managedInstalls={managedInstalls}
+              observedHarnesses={observedHarnesses}
+              queuedItems={queuedItems}
+              onOpenAppDetail={props.onOpenAppDetail}
+            />
+          )}
 
           <HomeProtectionModule
             snapshot={snapshot}
@@ -376,6 +428,8 @@ export function HomeWorkspace(props: {
         </section>
 
         <section className="space-y-6">
+          {state.heroStatus === "setup_gap" && <WhatStaysLocalCard />}
+
           {snapshot.latest_receipts.length > 0 && (
             <RecentProtectionSection receipts={snapshot.latest_receipts} />
           )}
@@ -546,9 +600,9 @@ export function deriveHomeState(input: {
   if (!hasActiveInstalls && !hasObservedHarnesses) {
     return {
       heroStatus: "setup_gap",
-      headline: "Guard is ready",
-      subheadline: "Connect your first AI app so Guard can start protecting it.",
-      ctaLabel: "Open Protect",
+      headline: "Welcome to Guard",
+      subheadline: "Guard sits between your AI apps and this computer. When an app tries something it hasn’t done before, Guard pauses it and asks you first.",
+      ctaLabel: "Connect your first app",
       ctaTarget: "protect",
     };
   }
@@ -557,8 +611,8 @@ export function deriveHomeState(input: {
     return {
       heroStatus: "setup_gap",
       headline: "Finish setup",
-      subheadline: "Guard detected apps but they need setup to be fully protected.",
-      ctaLabel: "Open Protect",
+      subheadline: "Guard found apps on this computer, but they need setup before they are fully protected.",
+      ctaLabel: "Finish setup",
       ctaTarget: "protect",
     };
   }
