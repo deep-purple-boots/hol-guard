@@ -110,7 +110,8 @@ assert(clearFacts[0] === "3 apps protected", `app count fact — got ${clearFact
 assert(clearFacts[1] === "43 actions checked today", `today count prefers analytics — got ${clearFacts[1]}`);
 assert(clearFacts[2].startsWith("Last decision "), `last decision fact — got ${clearFacts[2]}`);
 
-const fallbackFacts = buildHeroFacts({ status: "clear", watchedAppsCount: 1, queuedCount: 0, latestReceipts: [makeReceipt(5), makeReceipt(10)], analytics: null, oldestQueuedAt: null });
+// Receipts stamped "now" always fall on today, so this holds just after local midnight too.
+const fallbackFacts = buildHeroFacts({ status: "clear", watchedAppsCount: 1, queuedCount: 0, latestReceipts: [makeReceipt(0), makeReceipt(0)], analytics: null, oldestQueuedAt: null });
 assert(fallbackFacts.includes("2 actions checked today"), "today count falls back to latest receipts when analytics are not loaded");
 assert(fallbackFacts[0] === "1 app protected", "singular app count");
 

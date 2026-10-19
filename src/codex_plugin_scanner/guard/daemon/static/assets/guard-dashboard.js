@@ -35782,7 +35782,7 @@ function App() {
   const latestRefresh = reactExports.useRef(null);
   const bulkApproveInFlight = reactExports.useRef(false);
   const queuedItems = requests.kind === "ready" ? requests.items : [];
-  const activeRequestId = requestId ?? queuedItems[0]?.request_id ?? null;
+  const activeRequestId = requestId ?? (view === "home" ? null : queuedItems[0]?.request_id) ?? null;
   reactExports.useEffect(() => {
     if (activeRequestId === null) {
       setDetail({ kind: "idle" });

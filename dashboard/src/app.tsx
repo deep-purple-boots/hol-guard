@@ -302,7 +302,8 @@ export function App() {
   const latestRefresh = useRef<Promise<{ snapshot: GuardRuntimeSnapshot | null; complete: boolean }> | null>(null);
   const bulkApproveInFlight = useRef(false);
   const queuedItems = requests.kind === "ready" ? requests.items : [];
-  const activeRequestId = requestId ?? queuedItems[0]?.request_id ?? null;
+  // Home only previews the queue, so it never opens a request's detail on its own.
+  const activeRequestId = requestId ?? (view === "home" ? null : queuedItems[0]?.request_id) ?? null;
 
   useEffect(() => {
     if (activeRequestId === null) {
