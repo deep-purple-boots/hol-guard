@@ -146,7 +146,7 @@ export function buildSampleCopy(sample: SampleAction, state: SampleState): Sampl
       guardDetail: "Nothing new right now.",
       guardTag: null,
       youTitle: "Nothing to decide",
-      youBody: "Guard only asks when something is new.",
+      youBody: "Guard only asks when it can’t tell an action is safe.",
       receiptLine: null,
       receiptNote: null,
     };
@@ -158,7 +158,7 @@ export function buildSampleCopy(sample: SampleAction, state: SampleState): Sampl
       guardDetail: "Something new is on its way.",
       guardTag: null,
       youTitle: "Nothing to decide",
-      youBody: "Guard only asks when something is new.",
+      youBody: "Guard only asks when it can’t tell an action is safe.",
       receiptLine: null,
       receiptNote: null,
     };
@@ -170,7 +170,7 @@ export function buildSampleCopy(sample: SampleAction, state: SampleState): Sampl
       guardDetail: "Comparing against what this computer has seen before.",
       guardTag: null,
       youTitle: "Nothing to decide",
-      youBody: "Guard only asks when something is new.",
+      youBody: "Guard only asks when it can’t tell an action is safe.",
       receiptLine: null,
       receiptNote: null,
     };
@@ -200,7 +200,7 @@ export function buildSampleCopy(sample: SampleAction, state: SampleState): Sampl
         ? "The app gets a clear “no” and keeps running. Nothing was installed or read."
         : decision === "once"
           ? "The app continues. Guard will ask again next time, because you chose once."
-          : `The app continues, and Guard won’t ask about this ${sample.noun} again on this computer.`,
+          : `The app continues, and Guard won’t ask about this exact ${sample.noun} again on this computer. If it changes, Guard checks it again.`,
     receiptLine,
     receiptNote:
       "In real use this is saved on this computer as a receipt you can look back at in Evidence." +

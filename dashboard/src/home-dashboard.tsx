@@ -649,8 +649,8 @@ export function deriveHomeState(input: {
     return {
       heroStatus: "setup_gap",
       headline: "Welcome to Guard",
-      subheadline: "Guard sits between your AI apps and this computer. When an app tries something it hasn’t done before, Guard pauses it and asks you first.",
-      ctaLabel: "Connect your first app",
+      subheadline: "Guard sits between your AI apps and this computer. Routine work runs, harmful actions are stopped, and Guard asks you when it can’t tell.",
+      ctaLabel: "See setup steps",
       ctaTarget: "protect",
     };
   }

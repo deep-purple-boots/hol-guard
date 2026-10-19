@@ -1,6 +1,7 @@
 import { buildHeroFacts, buildHeroLiveLabel, buildHeroQueuePreview, buildHomeHeroModel, describeQueueItem, HERO_BADGE_LABELS, heroMoodForStatus, heroToneForStatus, redactQueueArtifactName } from "./home-hero";
 import { brandMarkKindAt, BRAND_MARK, brandMarkSvg, sampleBrandMarkParticles } from "./brand-mark-geometry";
 import type { GuardApprovalRequest, GuardReceipt } from "./guard-types";
+import { formatRelativeTime } from "./approval-center-utils";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) {
@@ -65,7 +66,7 @@ assert(redactQueueArtifactName("x".repeat(60)) === null, "overlong names are dro
 const packageItem = makeRequest({
   action_envelope_json: { action_type: "package_script", package_name: "left-pad" } as GuardApprovalRequest["action_envelope_json"],
 });
-assert(describeQueueItem(packageItem) === "wants to install a package · left-pad@9.9.9", `package request reads in plain language — got ${describeQueueItem(packageItem)}`);
+assert(describeQueueItem(packageItem) === "wants to run a package script · left-pad@9.9.9", `package request reads in plain language — got ${describeQueueItem(packageItem)}`);
 
 const fileItem = makeRequest({
   artifact_name: "/Users/me/project/.env",
@@ -92,7 +93,8 @@ assert(preview[0].when.endsWith("ago"), "preview rows show relative time");
 const setupFacts = buildHeroFacts({ status: "setup_gap", watchedAppsCount: 0, queuedCount: 0, latestReceipts: [], analytics: null, oldestQueuedAt: null });
 assert(setupFacts.length === 3 && !containsJargon(setupFacts.join(" ")), "first-run facts are plain trust statements");
 
-const todayKey = new Date().toISOString().slice(0, 10);
+const now = new Date();
+const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 const clearFacts = buildHeroFacts({
   status: "clear",
   watchedAppsCount: 3,
@@ -116,17 +118,25 @@ const reviewFacts = buildHeroFacts({ status: "needs_review", watchedAppsCount: 2
 assert(reviewFacts.some((fact) => fact.startsWith("Paused ")), "review facts say when the oldest action was paused");
 assert(!containsJargon(reviewFacts.join(" ")), "review facts avoid jargon");
 
+for (const status of ["degraded", "partial"] as const) {
+  const facts = buildHeroFacts({ status, watchedAppsCount: 2, queuedCount: 0, latestReceipts: [], analytics: null, oldestQueuedAt: null });
+  assert(facts[0] === "2 apps connected" && !facts.some((fact) => fact.includes("protected")), `${status} facts do not claim the apps are protected — got ${facts[0]}`);
+}
+
 // --- live caption and mood
 assert(buildHeroLiveLabel("clear", 3, 0) === "Watching 3 apps", "clear caption");
 assert(buildHeroLiveLabel("clear", 1, 0) === "Watching 1 app", "clear caption singular");
 assert(buildHeroLiveLabel("needs_review", 3, 1) === "1 paused", "review caption singular");
 assert(buildHeroLiveLabel("needs_review", 3, 2) === "2 paused", "review caption");
 assert(buildHeroLiveLabel("setup_gap", 0, 0) === "Ready", "setup caption");
-assert(buildHeroLiveLabel("checking", 2, 0) === "Checking" && buildHeroLiveLabel("degraded", 2, 0) === "Needs repair" && buildHeroLiveLabel("partial", 2, 0) === "Watching 2 apps", "protection-health captions");
+assert(buildHeroLiveLabel("checking", 2, 0) === "Checking" && buildHeroLiveLabel("degraded", 2, 0) === "Needs repair" && buildHeroLiveLabel("partial", 2, 0) === "Partly protected", "protection-health captions");
 assert(heroToneForStatus("degraded") === "review" && heroToneForStatus("partial") === "setup" && heroToneForStatus("checking") === "setup", "degraded shares the review tint; partial and checking share the setup tint");
 assert(HERO_BADGE_LABELS.partial === "Partially protected" && HERO_BADGE_LABELS.degraded === "Degraded" && HERO_BADGE_LABELS.checking === "Checking", "chip labels match GuardHero for the protection-health states");
 assert(buildHeroFacts({ status: "checking", watchedAppsCount: 2, queuedCount: 0, latestReceipts: [makeReceipt(1)], analytics: null, oldestQueuedAt: null }).length === 0, "no facts while protection is still being checked");
 const model = buildHomeHeroModel({ status: "needs_review", watchedAppsCount: 2, queuedCount: 2, queuedItems: [packageItem, fileItem], latestReceipts: [], analytics: null });
+const olderItem = { ...fileItem, request_id: "req-older", created_at: new Date(Date.now() - 90 * 60_000).toISOString() };
+const reordered = buildHomeHeroModel({ status: "needs_review", watchedAppsCount: 2, queuedCount: 3, queuedItems: [packageItem, olderItem, fileItem], latestReceipts: [], analytics: null });
+assert(reordered.facts.includes(`Paused ${formatRelativeTime(olderItem.created_at)}`), `paused age uses the earliest created_at, not the last row — got ${reordered.facts.join(" | ")}`);
 assert(model.queue.length === 2 && model.liveLabel === "2 paused" && model.facts.some((fact) => fact.startsWith("Paused ")), "hero model bundles queue, caption and facts");
 assert(HERO_BADGE_LABELS.clear === "Protected" && HERO_BADGE_LABELS.needs_review === "Needs your choice" && HERO_BADGE_LABELS.setup_gap === "Setup needed", "status chip labels match the existing hero");
 assert(heroMoodForStatus("needs_review") === "review" && heroMoodForStatus("setup_gap") === "setup" && heroMoodForStatus("clear") === "clear", "mood maps from status");

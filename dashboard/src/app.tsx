@@ -36,6 +36,7 @@ import { selectNextAfterResolution } from "./queue-state";
 import { useRouteFocus } from "./use-route-focus";
 import { commitDashboardLocation, useDashboardPathname } from "./dashboard-location";
 
+const HOME_QUEUE_PREVIEW_LIMIT = 50;
 const HomeWorkspace = lazyWorkspace("home-dashboard", () => import("./home-dashboard").then((m) => ({ default: m.HomeWorkspace })));
 const FleetWorkspace = lazyWorkspace("fleet-workspace", () => import("./fleet-workspace").then((m) => ({ default: m.FleetWorkspace })));
 const SettingsWorkspace = lazyWorkspace("settings-workspace", () => import("./settings-workspace").then((m) => ({ default: m.SettingsWorkspace })));
@@ -353,6 +354,7 @@ export function App() {
     let clearedQueue = false;
     const needsFullQueue = view === "inbox" && requestId === null;
     const needsQueuePage = view === "inbox" || requestId !== null;
+    const needsHomePreview = view === "home" && requestId === null;
     const needsRuntimeReceipts =
       view === "home" ||
       view === "fleet" ||
@@ -392,6 +394,19 @@ export function App() {
             if (!cancelled && !resolutionInFlight.current) {
               const message = error instanceof Error ? error.message : queueErrorMessage;
               setRequests({ kind: "error", message });
+            }
+          });
+      } else if (needsHomePreview) {
+        // Home previews the first few paused actions and their age; a failed preview leaves Home usable.
+        pendingRequests = fetchApprovalPage({ status: "pending", limit: HOME_QUEUE_PREVIEW_LIMIT })
+          .then((page) => {
+            if (!cancelled && !resolutionInFlight.current) {
+              setRequests({ kind: "ready", items: page.items });
+            }
+          })
+          .catch(() => {
+            if (!cancelled && !resolutionInFlight.current) {
+              setRequests({ kind: "ready", items: [] });
             }
           });
       } else {

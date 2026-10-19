@@ -1,7 +1,4 @@
-import { useEffect, useRef } from "react";
-
-import { BRAND_MARK, brandMarkSvg, sampleBrandMarkParticles } from "./brand-mark-geometry";
-import { useReducedMotion } from "./use-reduced-motion";
+import { BRAND_MARK, sampleBrandMarkParticles } from "./brand-mark-geometry";
 
 export type HeroParticleMood = "clear" | "review" | "setup";
 export type HeroParticleFinish = "navy" | "brand" | "white";
@@ -11,7 +8,7 @@ type Rgb = [number, number, number];
 const BRAND_BLUE = "#5599fe";
 const BRAND_PURPLE = "#b56cff";
 const BRAND_GREEN = "#48df7b";
-const BRAND_NAVY = "#3f4174";
+export const BRAND_NAVY = "#3f4174";
 const BRAND_AMBER = "#f59e0b";
 
 const VIEW_EXTENT = 1.3; // half-width of the view in mark units
@@ -92,14 +89,14 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string):
   return shader;
 }
 
-type ParticleScene = {
+export type ParticleScene = {
   setMood: (mood: HeroParticleMood) => void;
   setFinish: (finish: HeroParticleFinish) => void;
   setMotion: (enabled: boolean) => void;
   destroy: () => void;
 };
 
-function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement): ParticleScene | null {
+export function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement, onContextLost: () => void): ParticleScene | null {
   const gl = canvas.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: false, powerPreference: "high-performance" });
   if (!gl) return null;
   const vertex = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
@@ -137,9 +134,11 @@ function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement): Par
     position[i * 2 + 1] = start[i * 2 + 1];
   }
 
+  const buffers: WebGLBuffer[] = [];
   function attribute(name: string, data: Float32Array, size: number, usage: number): WebGLBuffer | null {
     const buffer = gl!.createBuffer();
     const location = gl!.getAttribLocation(program!, name);
+    if (buffer) buffers.push(buffer);
     if (!buffer || location < 0) return null;
     gl!.bindBuffer(gl!.ARRAY_BUFFER, buffer);
     gl!.bufferData(gl!.ARRAY_BUFFER, data, usage);
@@ -323,7 +322,7 @@ function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement): Par
     if (state.motion && state.visible) state.frame = requestAnimationFrame(loop);
   }
   function requestFrame(): void {
-    if (!state.frame) state.frame = requestAnimationFrame(loop);
+    if (!state.frame && !lost) state.frame = requestAnimationFrame(loop);
   }
 
   function toMarkUnits(event: PointerEvent): { x: number; y: number } {
@@ -368,6 +367,15 @@ function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement): Par
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerleave", onPointerLeave);
   canvas.addEventListener("pointerdown", onPointerDown);
+  let lost = false;
+  const onWebglContextLost = (event: Event): void => {
+    event.preventDefault();
+    lost = true;
+    if (state.frame) cancelAnimationFrame(state.frame);
+    state.frame = 0;
+    onContextLost();
+  };
+  canvas.addEventListener("webglcontextlost", onWebglContextLost);
 
   function resize(): void {
     const width = stage.clientWidth || 320;
@@ -421,60 +429,16 @@ function createParticleScene(canvas: HTMLCanvasElement, stage: HTMLElement): Par
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("webglcontextlost", onWebglContextLost);
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
-      gl!.getExtension("WEBGL_lose_context")?.loseContext();
+      // Free GL objects but keep the context: a remount (StrictMode, route return) reuses this canvas.
+      if (!lost && !gl!.isContextLost()) {
+        for (const buffer of buffers) gl!.deleteBuffer(buffer);
+        if (program) gl!.deleteProgram(program);
+        if (vertex) gl!.deleteShader(vertex);
+        if (fragment) gl!.deleteShader(fragment);
+      }
     },
   };
-}
-
-export function HeroParticleLogo(props: {
-  mood: HeroParticleMood;
-  finish?: HeroParticleFinish;
-  className?: string;
-}) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sceneRef = useRef<ParticleScene | null>(null);
-  const reducedMotion = useReducedMotion();
-  const finish = props.finish ?? "navy";
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    const canvas = canvasRef.current;
-    if (!stage || !canvas) return;
-    let scene: ParticleScene | null = null;
-    try {
-      scene = createParticleScene(canvas, stage);
-    } catch {
-      scene = null;
-    }
-    if (!scene) {
-      stage.classList.add("guard-hero-stage--fallback");
-      return;
-    }
-    sceneRef.current = scene;
-    return () => {
-      scene?.destroy();
-      sceneRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    sceneRef.current?.setFinish(finish);
-  }, [finish]);
-  useEffect(() => {
-    sceneRef.current?.setMood(props.mood);
-  }, [props.mood]);
-  useEffect(() => {
-    sceneRef.current?.setMotion(!reducedMotion);
-  }, [reducedMotion]);
-
-  return (
-    <div ref={stageRef} className={`guard-hero-stage${props.className ? ` ${props.className}` : ""}`} aria-hidden="true">
-      <div className="guard-hero-halo" />
-      <canvas ref={canvasRef} className="guard-hero-canvas" />
-      <div className="guard-hero-fallback" dangerouslySetInnerHTML={{ __html: brandMarkSvg(finish === "white" ? "#ffffff" : BRAND_NAVY) }} />
-    </div>
-  );
 }

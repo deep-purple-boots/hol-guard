@@ -22,13 +22,13 @@ export const HOW_GUARD_WORKS_STEPS = [
     icon: HiMiniEye,
   },
   {
-    title: "Guard pauses what’s new",
-    body: "A package it hasn’t seen, a file with secrets, a new tool. Anything unfamiliar stops before it runs.",
+    title: "Guard sorts each action",
+    body: "Routine work runs and clearly harmful actions are stopped. Anything Guard can’t vouch for, like an unknown package or a file with secrets, waits for you.",
     icon: HiMiniHandRaised,
   },
   {
     title: "You decide, Guard remembers",
-    body: "Allow or block in one click. Every decision is saved as a receipt, so Guard won’t ask about the same thing twice unless you want it to.",
+    body: "Allow once, always allow, or block. Every decision is saved as a receipt. Always allow covers that exact action; if it changes, Guard checks it again.",
     icon: HiMiniDocumentCheck,
   },
 ] as const;

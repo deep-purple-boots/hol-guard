@@ -4,7 +4,8 @@ import { HiMiniChevronRight } from "react-icons/hi2";
 import { SectionLabel } from "./approval-center-primitives";
 import { formatNumber, formatRelativeTime, harnessDisplayName } from "./approval-center-utils";
 import type { GuardApprovalRequest, GuardReceipt, GuardReceiptAnalytics } from "./guard-types";
-import { HeroParticleLogo, type HeroParticleMood } from "./home-hero-particles";
+import { HeroParticleLogo } from "./home-hero-particle-logo";
+import type { HeroParticleMood } from "./home-hero-particles";
 
 export type HomeHeroStatus = "clear" | "needs_review" | "setup_gap" | "partial" | "degraded" | "checking";
 
@@ -41,7 +42,7 @@ export function describeQueueItem(item: GuardApprovalRequest): string {
     case "mcp_tool":
       return `wants to use a tool${suffix}`;
     case "package_script":
-      return `wants to install a package${suffix}`;
+      return `wants to run a package script${suffix}`;
     case "network_request":
       return "wants to reach the internet";
     case "config_change":
@@ -80,6 +81,10 @@ export function buildHeroQueuePreview(items: GuardApprovalRequest[], limit = 3):
   }));
 }
 
+function localDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 function countReceiptsToday(receipts: GuardReceipt[]): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -101,13 +106,15 @@ export function buildHeroFacts(input: {
     return [];
   }
   const facts: string[] = [];
-  facts.push(`${formatNumber(input.watchedAppsCount)} app${input.watchedAppsCount === 1 ? "" : "s"} protected`);
+  const appsLabel = `${formatNumber(input.watchedAppsCount)} app${input.watchedAppsCount === 1 ? "" : "s"}`;
+  const fullyProtected = input.status === "clear" || input.status === "needs_review";
+  facts.push(fullyProtected ? `${appsLabel} protected` : `${appsLabel} connected`);
   if (input.status === "needs_review") {
     if (input.oldestQueuedAt) facts.push(`Paused ${formatRelativeTime(input.oldestQueuedAt)}`);
     facts.push("Your apps keep working while you decide");
     return facts;
   }
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = localDateKey(new Date());
   const todayFromAnalytics = input.analytics?.daily_activity.find((day) => day.date_key === todayKey)?.total;
   const checkedToday = todayFromAnalytics ?? countReceiptsToday(input.latestReceipts);
   if (checkedToday > 0) facts.push(`${formatNumber(checkedToday)} action${checkedToday === 1 ? "" : "s"} checked today`);
@@ -121,6 +128,7 @@ export function buildHeroLiveLabel(status: HomeHeroStatus, watchedAppsCount: num
   if (status === "setup_gap") return "Ready";
   if (status === "checking") return "Checking";
   if (status === "degraded") return "Needs repair";
+  if (status === "partial") return "Partly protected";
   return `Watching ${watchedAppsCount} app${watchedAppsCount === 1 ? "" : "s"}`;
 }
 
@@ -129,6 +137,19 @@ export type HomeHeroModel = {
   liveLabel: string;
   queue: HomeHeroQueueItem[];
 };
+
+function oldestCreatedAt(items: GuardApprovalRequest[]): string | null {
+  let oldest: string | null = null;
+  let oldestMs = Number.POSITIVE_INFINITY;
+  for (const item of items) {
+    const ms = Date.parse(item.created_at);
+    if (Number.isFinite(ms) && ms < oldestMs) {
+      oldestMs = ms;
+      oldest = item.created_at;
+    }
+  }
+  return oldest;
+}
 
 /** Everything the hero shows that comes from runtime data, in one call so HomeWorkspace stays small. */
 export function buildHomeHeroModel(input: {
@@ -139,7 +160,8 @@ export function buildHomeHeroModel(input: {
   latestReceipts: GuardReceipt[];
   analytics: GuardReceiptAnalytics | null;
 }): HomeHeroModel {
-  const oldest = input.queuedItems.length > 0 ? input.queuedItems[input.queuedItems.length - 1].created_at : null;
+  // Only name the oldest pause when every paused action is loaded; a partial page could miss it.
+  const oldest = input.queuedItems.length >= input.queuedCount ? oldestCreatedAt(input.queuedItems) : null;
   return {
     facts: buildHeroFacts({
       status: input.status,
@@ -215,24 +237,36 @@ export function HomeHero(props: {
             <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/75">{props.subheadline}</p>
           </div>
           {props.queue.length > 0 ? (
-            <div className="rounded-xl border border-white/15 bg-white/[0.08] p-1" role="list" aria-label="Actions waiting for review">
-              {props.queue.map((item) => (
-                <button
-                  key={item.requestId}
-                  type="button"
-                  role="listitem"
-                  onClick={props.onOpenRequest ? () => props.onOpenRequest?.(item.requestId) : undefined}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                >
-                  <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#ffd58a]" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate text-sm text-white">
-                    <strong className="font-semibold">{item.app}</strong> {item.what}
-                  </span>
-                  <span className="shrink-0 text-xs text-white/65">{item.when}</span>
-                  <HiMiniChevronRight className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
-                </button>
-              ))}
-            </div>
+            <ul className="rounded-xl border border-white/15 bg-white/[0.08] p-1" aria-label="Actions waiting for review">
+              {props.queue.map((item) => {
+                const content = (
+                  <>
+                    <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#ffd58a]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-white">
+                      <strong className="font-semibold">{item.app}</strong> {item.what}
+                    </span>
+                    <span className="shrink-0 text-xs text-white/65">{item.when}</span>
+                  </>
+                );
+                const onOpenRequest = props.onOpenRequest;
+                return (
+                  <li key={item.requestId}>
+                    {onOpenRequest ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenRequest(item.requestId)}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                      >
+                        {content}
+                        <HiMiniChevronRight className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <div className="flex w-full items-center gap-3 rounded-lg px-3 py-2">{content}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           ) : null}
           <div className="guard-hero-ctas flex flex-wrap gap-3">
             {props.cta}
